@@ -28,6 +28,7 @@ python server.py
 - 工作流文件：`.github/workflows/build-executables.yml`
 - 支持平台：Windows / macOS / Linux
 - 触发方式：
+  - 推送分支触发：`master` / `main`
   - 手动触发：`Actions -> Build Executables -> Run workflow`
   - 打 tag 触发并自动发布 Release：`v*`（例如 `v1.0.0`）
 - 产物：
