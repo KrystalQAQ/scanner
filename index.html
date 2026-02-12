@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LAN Scanner Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #020617;
+      --bg-panel: rgba(15, 23, 42, 0.74);
+      --bg-panel-soft: rgba(30, 41, 59, 0.64);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --line: rgba(148, 163, 184, 0.28);
+      --primary: #22c55e;
+      --primary-soft: rgba(34, 197, 94, 0.12);
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --ok: #22c55e;
+      --shadow: 0 16px 40px rgba(2, 6, 23, 0.45);
+      --radius-xl: 24px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at 8% -10%, #1e3a8a 0%, transparent 35%),
+        radial-gradient(circle at 94% 10%, #14532d 0%, transparent 32%),
+        linear-gradient(160deg, #020617 0%, #081326 52%, #020617 100%);
+      color: var(--text-main);
+      font-family: "Fira Sans", sans-serif;
+    }
+
+    body {
+      padding: 28px 20px 40px;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .glass {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Fira Code", monospace;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .brand svg {
+      width: 22px;
+      height: 22px;
+      color: var(--primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 999px;
+      font-family: "Fira Sans", sans-serif;
+      font-weight: 600;
+      padding: 10px 16px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 200ms ease;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #86efac;
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #ecfdf5;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #34d399 0%, #16a34a 100%);
+    }
+
+    .btn-secondary {
+      border-color: rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.6);
+      color: #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(148, 163, 184, 0.62);
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hero-main,
+    .hero-side {
+      padding: 22px;
+    }
+
+    .kicker {
+      font-family: "Fira Code", monospace;
+      font-size: 0.82rem;
+      color: #86efac;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.13);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.5rem, 3vw, 2.3rem);
+      line-height: 1.15;
+      font-family: "Fira Code", monospace;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.6;
+      font-size: 0.98rem;
+    }
+
+    .scan-input {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    .scan-input input {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      padding: 12px 14px;
+      font-family: "Fira Code", monospace;
+      font-size: 0.92rem;
+    }
+
+    .scan-input input:focus-visible {
+      outline: 2px solid #4ade80;
+      outline-offset: 1px;
+    }
+
+    .hero-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.76) 0%, rgba(15, 23, 42, 0.3) 100%);
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+      transition: width 300ms ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-panel-soft);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+      cursor: pointer;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(74, 222, 128, 0.4);
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.3);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-family: "Fira Code", monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .stat-foot {
+      font-size: 0.76rem;
+      margin-top: 8px;
+      color: #86efac;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1rem;
+      font-family: "Fira Code", monospace;
+      font-weight: 600;
+    }
+
+    .panel-sub {
+      color: var(--text-muted);
+      font-size: 0.84rem;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px;
+      font-size: 0.88rem;
+    }
+
+    thead {
+      background: rgba(15, 23, 42, 0.88);
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      white-space: nowrap;
+    }
+
+    th {
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    td {
+      color: #e2e8f0;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .online {
+      color: #4ade80;
+      background: rgba(34, 197, 94, 0.16);
+    }
+
+    .offline {
+      color: #94a3b8;
+      background: rgba(71, 85, 105, 0.22);
+    }
+
+    .risky {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.16);
+    }
+
+    .logs {
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(2, 6, 23, 0.58);
+      padding: 12px;
+      height: 190px;
+      overflow: auto;
+      font-family: "Fira Code", monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: #bfdbfe;
+    }
+
+    .log-line {
+      margin: 0;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .legend-item {
+      border-radius: var(--radius-md);
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 180ms ease, background-color 180ms ease;
+      cursor: pointer;
+    }
+
+    .legend-item:hover {
+      border-color: rgba(74, 222, 128, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .legend-title {
+      margin: 0;
+      font-size: 0.86rem;
+      color: #dbeafe;
+    }
+
+    .legend-num {
+      font-family: "Fira Code", monospace;
+      font-size: 0.95rem;
+      color: #86efac;
+    }
+
+    .topology {
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .node {
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.7);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .scan-pulse {
+      position: fixed;
+      inset: auto 18px 18px auto;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 222, 128, 0.45);
+      background: rgba(2, 6, 23, 0.82);
+      color: #bbf7d0;
+      padding: 10px 14px;
+      font-family: "Fira Code", monospace;
+      font-size: 0.78rem;
+      pointer-events: none;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35);
+      }
+      70% {
+        box-shadow: 0 0 0 18px rgba(34, 197, 94, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 16px 12px 30px;
+      }
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .nav-actions {
+        width: 100%;
+      }
+      .nav-actions button {
+        flex: 1;
+      }
+      .scan-input {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: 1fr;
+      }
+      .scan-pulse {
+        left: 12px;
+        right: 12px;
+        text-align: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="nav glass">
+      <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 4a8 8 0 0 1 8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M12 8a4 4 0 0 1 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          <path d="M12 14v6M9 20h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        LAN SCANNER CONTROL
+      </div>
+      <div class="nav-actions">
+        <button id="exportBtn" class="btn-secondary" type="button">导出报告</button>
+        <button id="scanBtnTop" class="btn-primary" type="button">开始扫描</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <article class="hero-main glass">
+        <span class="kicker"><span class="dot"></span>Realtime Discovery</span>
+        <h1>局域网设备扫描与风险可视化</h1>
+        <p class="muted">输入网段后执行主动扫描，自动识别在线主机、开放端口与异常设备指纹。页面当前为前端原型，已包含后续联调所需的控制台布局与交互反馈。</p>
+        <div class="scan-input">
+          <label for="networkCidr" class="sr-only" style="position:absolute;left:-9999px;">扫描网段</label>
+          <input id="networkCidr" type="text" value="192.168.1.0/24" aria-label="扫描网段">
+          <button id="scanBtnInline" class="btn-primary" type="button">执行扫描</button>
+        </div>
+      </article>
+
+      <aside class="hero-side glass">
+        <div>
+          <div class="progress-head">
+            <span>当前进度</span>
+            <strong id="progressText">0%</strong>
+          </div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </div>
+        <p class="muted">扫描模式: <strong id="scanMode" style="color:#dcfce7;">ARP + Ping + TCP 兜底 + 端口探测</strong><br>上次完成: <span id="lastFinished">--</span></p>
+      </aside>
+    </section>
+
+    <section class="stats">
+      <article class="stat-card">
+        <p class="stat-label">发现设备</p>
+        <p id="totalCount" class="stat-value">0</p>
+        <div class="stat-foot">网段总样本</div>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">在线设备</p>
+        <p id="onlineCount" class="stat-value">0</p>
+        <div class="stat-foot">响应延迟 &lt; 80ms</div>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">高风险</p>
+        <p id="riskCount" class="stat-value">0</p>
+        <div class="stat-foot">弱口令/异常端口</div>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">新设备</p>
+        <p id="newCount" class="stat-value">0</p>
+        <div class="stat-foot">近 24h 首次出现</div>
+      </article>
+    </section>
+
+    <section class="layout">
+      <article class="panel glass">
+        <header class="panel-head">
+          <h2 class="panel-title">设备列表</h2>
+          <span class="panel-sub">自动按风险排序</span>
+        </header>
+        <div class="table-wrap">
+          <table aria-label="设备扫描结果">
+            <thead>
+              <tr>
+                <th>IP 地址</th>
+                <th>主机名</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>开放端口</th>
+                <th>风险评分</th>
+              </tr>
+            </thead>
+            <tbody id="deviceRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <aside class="panel glass">
+        <header class="panel-head">
+          <h2 class="panel-title">扫描日志</h2>
+          <span class="panel-sub">事件流</span>
+        </header>
+        <div id="logs" class="logs" aria-live="polite"></div>
+        <div class="legend">
+          <div class="legend-item">
+            <p class="legend-title">扫描线程</p>
+            <span class="legend-num">16</span>
+          </div>
+          <div class="legend-item">
+            <p class="legend-title">平均延迟</p>
+            <span class="legend-num">47ms</span>
+          </div>
+          <div class="legend-item">
+            <p class="legend-title">告警命中</p>
+            <span class="legend-num" id="alertHits">0</span>
+          </div>
+        </div>
+        <section class="topology" aria-label="网络拓扑摘要">
+          <div class="node">
+            <span>Core Router</span>
+            <strong>1</strong>
+          </div>
+          <div class="node">
+            <span>Servers</span>
+            <strong>4</strong>
+          </div>
+          <div class="node">
+            <span>Workstations</span>
+            <strong>8</strong>
+          </div>
+          <div class="node">
+            <span>IoT / Printers</span>
+            <strong>3</strong>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div id="scanPulse" class="scan-pulse">Idle: waiting for scan command</div>
+
+  <script>
+    const API_BASE = location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
+    const POLL_INTERVAL = 1000;
+
+    const refs = {
+      rows: document.getElementById("deviceRows"),
+      logs: document.getElementById("logs"),
+      progressBar: document.getElementById("progressBar"),
+      progressText: document.getElementById("progressText"),
+      pulse: document.getElementById("scanPulse"),
+      total: document.getElementById("totalCount"),
+      online: document.getElementById("onlineCount"),
+      risk: document.getElementById("riskCount"),
+      fresh: document.getElementById("newCount"),
+      hits: document.getElementById("alertHits"),
+      progressHost: document.querySelector('[role="progressbar"]'),
+      cidr: document.getElementById("networkCidr"),
+      btnTop: document.getElementById("scanBtnTop"),
+      btnInline: document.getElementById("scanBtnInline"),
+      exportBtn: document.getElementById("exportBtn"),
+      lastFinished: document.getElementById("lastFinished")
+    };
+
+    let pollTimer = null;
+    let currentJobId = null;
+    let lastSnapshot = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function formatIso(iso) {
+      if (!iso) return "--";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return iso;
+      return date.toLocaleString();
+    }
+
+    function setProgress(value) {
+      const safe = Math.max(0, Math.min(100, Number(value) || 0));
+      refs.progressBar.style.width = `${safe}%`;
+      refs.progressText.textContent = `${safe}%`;
+      refs.progressHost.setAttribute("aria-valuenow", String(safe));
+    }
+
+    function setBusy(busy) {
+      refs.btnTop.disabled = busy;
+      refs.btnInline.disabled = busy;
+      refs.btnTop.style.opacity = busy ? "0.7" : "1";
+      refs.btnInline.style.opacity = busy ? "0.7" : "1";
+      refs.btnTop.style.cursor = busy ? "not-allowed" : "pointer";
+      refs.btnInline.style.cursor = busy ? "not-allowed" : "pointer";
+    }
+
+    function updateExportButton() {
+      const hasData = lastSnapshot && Array.isArray(lastSnapshot.devices) && lastSnapshot.devices.length > 0;
+      refs.exportBtn.disabled = !hasData;
+      refs.exportBtn.style.opacity = hasData ? "1" : "0.6";
+      refs.exportBtn.style.cursor = hasData ? "pointer" : "not-allowed";
+    }
+
+    function renderRows(list) {
+      if (!Array.isArray(list) || list.length === 0) {
+        refs.rows.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;color:#94a3b8;">暂无设备结果，点击“开始扫描”以获取数据</td>
+          </tr>
+        `;
+        return;
+      }
+
+      refs.rows.innerHTML = list.map((d) => {
+        const state = String(d.state || "offline").toLowerCase();
+        const stateClass = state === "online" ? "online" : state === "risky" ? "risky" : "offline";
+        const risk = Number(d.risk) || 0;
+        const scoreColor = risk > 70 ? "#fca5a5" : risk > 40 ? "#fde68a" : "#86efac";
+        return `
+          <tr>
+            <td>${escapeHtml(d.ip)}</td>
+            <td>${escapeHtml(d.host)}</td>
+            <td>${escapeHtml(d.type)}</td>
+            <td><span class="status ${stateClass}">${escapeHtml(state)}</span></td>
+            <td>${escapeHtml(d.ports)}</td>
+            <td style="color:${scoreColor};font-family:'Fira Code',monospace;">${risk}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function updateStats(summary = {}, devices = []) {
+      const byDevices = {
+        total: devices.length,
+        online: devices.filter((d) => d.state === "online" || d.state === "risky").length,
+        risk: devices.filter((d) => d.state === "risky" || (Number(d.risk) || 0) >= 70).length,
+        new: devices.filter((d) => d.isNew).length
+      };
+      const finalStats = {
+        total: Number(summary.total ?? byDevices.total) || 0,
+        online: Number(summary.online ?? byDevices.online) || 0,
+        risk: Number(summary.risk ?? byDevices.risk) || 0,
+        new: Number(summary.new ?? byDevices.new) || 0
+      };
+      refs.total.textContent = String(finalStats.total);
+      refs.online.textContent = String(finalStats.online);
+      refs.risk.textContent = String(finalStats.risk);
+      refs.fresh.textContent = String(finalStats.new);
+      refs.hits.textContent = String(finalStats.risk);
+    }
+
+    function renderLogs(logs) {
+      if (!Array.isArray(logs) || logs.length === 0) {
+        refs.logs.innerHTML = '<p class="log-line">[--:--:--] waiting for events...</p>';
+        return;
+      }
+      refs.logs.innerHTML = logs
+        .map((line) => `<p class="log-line">${escapeHtml(line)}</p>`)
+        .join("");
+      refs.logs.scrollTop = refs.logs.scrollHeight;
+    }
+
+    async function requestJson(path, options = {}) {
+      const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+      const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.error || `Request failed (${resp.status})`);
+      }
+      return data;
+    }
+
+    function applyJobState(data) {
+      lastSnapshot = data;
+      updateExportButton();
+      setProgress(data.progress || 0);
+      renderRows(data.devices || []);
+      updateStats(data.summary || {}, data.devices || []);
+      renderLogs(data.logs || []);
+
+      if (data.finishedAt) {
+        refs.lastFinished.textContent = formatIso(data.finishedAt);
+      }
+
+      if (data.status === "running") {
+        refs.pulse.textContent = `Scanning ${escapeHtml(data.cidr)} | ${escapeHtml(data.currentStep || "running")}`;
+      }
+      if (data.status === "completed") {
+        refs.pulse.textContent = `Scan completed: ${Number(data.summary?.total || 0)} devices analyzed`;
+      }
+      if (data.status === "failed") {
+        refs.pulse.textContent = `Scan failed: ${escapeHtml(data.error || "unknown error")}`;
+      }
+    }
+
+    async function pollScanStatus() {
+      if (!currentJobId) return;
+      try {
+        const data = await requestJson(`/api/scan/${currentJobId}`);
+        applyJobState(data);
+        if (data.status === "completed" || data.status === "failed") {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          currentJobId = null;
+          setBusy(false);
+        }
+      } catch (err) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        currentJobId = null;
+        setBusy(false);
+        refs.pulse.textContent = `Connection error: ${err.message}`;
+      }
+    }
+
+    async function startScan() {
+      if (pollTimer) return;
+      const cidr = refs.cidr.value.trim();
+      if (!cidr) {
+        refs.pulse.textContent = "请先输入扫描网段，例如 192.168.1.0/24";
+        return;
+      }
+
+      setBusy(true);
+      lastSnapshot = null;
+      updateExportButton();
+      setProgress(0);
+      renderRows([]);
+      updateStats({}, []);
+      renderLogs([`[${new Date().toLocaleTimeString()}] 正在启动扫描任务...`]);
+      refs.pulse.textContent = "Submitting scan task...";
+
+      try {
+        const task = await requestJson("/api/scan/start", {
+          method: "POST",
+          body: JSON.stringify({ cidr })
+        });
+        currentJobId = task.jobId;
+        refs.pulse.textContent = `Task accepted: ${currentJobId}`;
+        await pollScanStatus();
+        if (currentJobId) {
+          pollTimer = setInterval(pollScanStatus, POLL_INTERVAL);
+        }
+      } catch (err) {
+        setBusy(false);
+        refs.pulse.textContent = `Submit failed: ${err.message}`;
+      }
+    }
+
+    async function checkBackendHealth() {
+      try {
+        const health = await requestJson("/api/health");
+        refs.pulse.textContent = `Backend ready: ${health.service}`;
+      } catch {
+        refs.pulse.textContent = "Backend unavailable: run python server.py first";
+      }
+    }
+
+    function exportReport() {
+      if (!lastSnapshot || !Array.isArray(lastSnapshot.devices) || lastSnapshot.devices.length === 0) {
+        refs.pulse.textContent = "No completed scan result to export";
+        return;
+      }
+
+      const report = {
+        generatedAt: new Date().toISOString(),
+        cidr: lastSnapshot.cidr,
+        summary: lastSnapshot.summary,
+        devices: lastSnapshot.devices,
+        logs: lastSnapshot.logs
+      };
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().replaceAll(":", "-");
+      link.href = URL.createObjectURL(blob);
+      link.download = `lan-scan-report-${stamp}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    refs.btnTop.addEventListener("click", startScan);
+    refs.btnInline.addEventListener("click", startScan);
+    refs.exportBtn.addEventListener("click", exportReport);
+    refs.cidr.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        startScan();
+      }
+    });
+
+    renderRows([]);
+    updateStats({}, []);
+    renderLogs(["[--:--:--] 系统初始化中..."]);
+    updateExportButton();
+    checkBackendHealth();
+  </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+name: Build Executables
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_name: linux
+            data_sep: ":"
+            exe_ext: ""
+          - os: windows-latest
+            os_name: windows
+            data_sep: ";"
+            exe_ext: ".exe"
+          - os: macos-latest
+            os_name: macos
+            data_sep: ":"
+            exe_ext: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Build binary
+        run: >
+          pyinstaller --noconfirm --clean --onefile --name lan-scanner
+          --add-data "index.html${{ matrix.data_sep }}."
+          server.py
+
+      - name: Prepare artifact files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp "dist/lan-scanner${{ matrix.exe_ext }}" "release/lan-scanner${{ matrix.exe_ext }}"
+          cp README.md release/README.md
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lan-scanner-${{ matrix.os_name }}
+          path: release/*
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Zip artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p bundles
+          for dir in artifacts/*; do
+            name="$(basename "$dir")"
+            (cd "$dir" && zip -r "../../bundles/${name}.zip" .)
+          done
+
+      - name: Create GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bundles/*.zip
